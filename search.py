@@ -11,12 +11,11 @@ class TitleSearch(object):
 	"""
 	Title Search class
 	"""
-	def __init__(self, title, title_count):
+	def __init__(self, title):
 		"""
 		Init class using title.
 		"""
 		self.title = title
-		self.title_count = title_count
 	
 	def gen_url(self):
 		"""
@@ -38,9 +37,9 @@ class TitleSearch(object):
 		except:
 			html = self.title+'\t'+'Error'
 		
-		print self.title_count, len(html)
 		return html
 
+'''
 class HtmlStore(object):
 	"""
 	Store html.
@@ -59,8 +58,8 @@ class HtmlStore(object):
 		"""
 		with open(os.path.join(self.directory, self.title), 'w') as f:
 			f.write(content)
+'''
 	
-
 class HtmlParser(object):
 	"""
 	Html Parser.
@@ -71,28 +70,29 @@ class HtmlParser(object):
 		Init class using directory.
 		"""
 		self.content = content
-	
 
-	def parse(self, filename):
+	def parse(self):
 		"""
-		Parse html and return keyword.
+		Parse html and return baobeiTotalHit.
 		"""
-		general_regex = r'我们为您找到了.*?的搜索结果|搜索结果较少，尝试下.*?"export":false}'
-		target_strs = re.findall(general_regex, self.content)
-		regex = r'\u003e.*?\u003c'
-		keywords = []
+		def __2int(string):
+			if "万" in string:
+				match = re.findall('(.*?)万', string)[0]
+				return int(float(match) * 1e4)
+			return int(string)
+
+		regex = r'"baobeiTotalHit":"([^\"\']*?)"'
+		targets = re.findall(regex, self.content)
+		#print __2int(targets[0])
 		try:
-			words = re.findall(regex, target_strs[0])
-			for word in words:
-				keyword = word.lstrip('\u003e').rstrip('\u003c')
-				keywords.append(keyword)
+			return __2int(targets[0])
 		except IndexError:
-			return filename
+			print '### IndexError'
+			#print self.content
+			return -1
 		except:
-		        return 'ERROR'
-
-		return ' '.join(keywords)
-	
+			print '### Error'
+		        return -2
 
 if __name__ == "__main__":
 	pass
