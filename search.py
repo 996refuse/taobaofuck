@@ -22,7 +22,8 @@ class TitleSearch(object):
 		generate url.
 		"""
 		encode_title = urllib.quote(self.title)
-		taobao_url = 'http://s.taobao.com/search?q='+encode_title
+		taobao_url = 'http://s.taobao.com/search?q='+encode_title+'&ie=utf8&cps=yes&s=0&app=vproduct&cd=false&v=auction&tab=all&vlist=1'
+		#taobao_url = 'http://s.taobao.com/search?q='+encode_title
 		return taobao_url
 
 	def get_html(self, url):
@@ -73,7 +74,7 @@ class HtmlParser(object):
 
 	def parse(self):
 		"""
-		Parse html and return baobeiTotalHit.
+		Parse html and return Total.
 		"""
 		def __2int(string):
 			if "万" in string:
@@ -81,18 +82,25 @@ class HtmlParser(object):
 				return int(float(match) * 1e4)
 			return int(string)
 
-		regex = r'"baobeiTotalHit":"([^\"\']*?)"'
-		targets = re.findall(regex, self.content)
-		#print __2int(targets[0])
+		regex1 = r'"baobeiTotalHit":"([^\"\']*?)"'
+		regex2 = r'"totalCount":(\d*?)}'
+		targets1 = re.findall(regex1, self.content)
+		targets2 = re.findall(regex2, self.content)
+
 		try:
-			return __2int(targets[0])
-		except IndexError:
-			print '### IndexError'
-			#print self.content
-			return -1
+			tt = __2int(targets1[0])
+			return tt
 		except:
-			print '### Error'
-		        return -2
+			try:
+				tt = __2int(targets2[0])
+				return tt
+			except IndexError:
+				print '@@@@@@@@@@@@ IndexError'
+				#print self.content
+				return -1
+			except:
+				print '@@@@@@@@@@@@ UnknowError'
+			        return -2
 
 if __name__ == "__main__":
 	pass

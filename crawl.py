@@ -10,13 +10,15 @@ from search import TitleSearch
 #from search import HtmlStore
 from search import HtmlParser
 
-#输入文件名input.gbk 输出output.gbk
-#默认utf8输入gbk输出
+import time, random
+
+#输入文件每行以空白字符分割  取第一个作为关键字
+#输入文件名gbk.txt输出out.txt
+#默认utf8输入utf8输出
 GBKIN = 0
-GBKOUT = 1 
+GBKOUT = 0
 
 SHARE_Q = Queue.Queue()
-Error_count = 0
 count = 0
 
 class MyThread(threading.Thread):
@@ -38,7 +40,7 @@ def get_titles(filename):
 			if '#' == line[0]:
 				continue
 			#title = line.rstrip('\r\n').split('\t')[1]
-			title = line.rstrip('\r\n')
+			title = line.rstrip('\r\n').split()[0]
 			SHARE_Q.put(title)
 
 
@@ -51,24 +53,33 @@ def crawl_parse(title):
 	url = title_search.gen_url()
 	html = title_search.get_html(url)
 	
-	try:
-		parser = HtmlParser(html)
-		AnInt = parser.parse()
-	except:
-		print "@@@@@@@@@@@@ ParseError"
-                
-	try:
-		with open('output.gbk', 'a') as f:
-			line = title.replace('\t', ' ')+'\t'+str(AnInt)+'\n'
-			line = gbkOUT(line)
-            		f.write(line)
-	except:
-		Error_count += 1
+
+	parser = HtmlParser(html)
+	AnInt = parser.parse()
+
+    
+	if -1 == AnInt:
+		SHARE_Q.put(title)
+		print "### IndexError Retry", title
+		time.sleep(random.random()*20 + 3)
+		return
+
+	if -2 == AnInt:
+		SHARE_Q.put(title)
+		print "### UnknowError Retry", title
+		time.sleep(random.random()*100 + 3)
+		return
+
+	line = title.replace('\t', ' ')+'\t'+str(AnInt)+'\t'+'nz'+'\n'
+	line = gbkOUT(line)
+	with open('out.txt', 'a') as f:
+		f.write(line)
+    
+	#print "### Accomplete", title
 	count += 1
 
-	if count%10000 == 0:
+	if count%1000 == 0:
 		print "### 已完成关键词个数: " , count
-		print "### 失败关键词个数: " , Error_count
 	
 	# 60万框架 nz  gbk
 
@@ -88,7 +99,7 @@ def main(filename):
 
 	global SHARE_Q
 
-	WORKER_THREAD_NUM = 20
+	WORKER_THREAD_NUM = 12
 	get_titles(filename)
 	print '### generate queue finished'
 	
@@ -115,4 +126,5 @@ def gbkOUT(string):
 	return string
 
 if __name__ == "__main__":
-	main('input.gbk')
+	import sys
+	main(sys.argv[1]) 
